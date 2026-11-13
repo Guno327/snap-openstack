@@ -10,10 +10,27 @@ terraform {
   }
 }
 
-provider "juju" {}
+provider "juju" {
+  offering_controllers = var.offering_controllers
+}
 
 data "juju_model" "model" {
   uuid = var.model
+}
+
+module "ceph-proxies" {
+  for_each = { for k, v in var.backends : k => v.ceph_proxy if v.ceph_proxy != null }
+
+  source = "./modules/ceph-proxy"
+
+  model_uuid     = data.juju_model.model.uuid
+  name           = "${each.key}-proxy"
+  charm_channel  = each.value.charm_channel
+  charm_revision = each.value.charm_revision
+  charm_base     = each.value.charm_base
+  machine_ids    = each.value.machine_ids
+  charm_config   = each.value.charm_config
+  user_keys      = each.value.user_keys
 }
 
 module "backends" {
@@ -32,6 +49,15 @@ module "backends" {
   charm_config          = each.value.charm_config
   endpoint_bindings     = each.value.endpoint_bindings
   secrets               = each.value.secrets
+  integrations = merge(
+    each.value.integrations,
+    {
+      for k, p in module.ceph-proxies : "ceph" => {
+        application = p.application_name
+        endpoint    = "client"
+      } if k == each.key
+    },
+  )
 }
 
 module "cinder-volume" {

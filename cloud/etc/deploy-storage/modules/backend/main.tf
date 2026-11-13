@@ -77,3 +77,21 @@ resource "juju_integration" "storage-backend-to-cinder-volume" {
     endpoint = "cinder-volume"
   }
 }
+
+# Extra Integrations (e.g. ceph and ceph-access for ceph backends)
+resource "juju_integration" "extra" {
+  for_each   = var.integrations
+  model_uuid = data.juju_model.model.uuid
+
+  application {
+    name     = juju_application.storage-backend.name
+    endpoint = each.key
+  }
+
+  application {
+    name                = each.value.offer_url == null ? each.value.application : null
+    endpoint            = each.value.endpoint
+    offer_url           = each.value.offer_url
+    offering_controller = each.value.offering_controller
+  }
+}

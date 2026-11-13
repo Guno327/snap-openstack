@@ -36,6 +36,32 @@ variable "backends" {
     charm_config          = map(string)
     endpoint_bindings     = set(map(string))
     secrets               = map(string)
+    integrations = optional(map(object({
+      application         = optional(string)
+      endpoint            = optional(string)
+      offer_url           = optional(string)
+      offering_controller = optional(string)
+    })), {})
+    ceph_proxy = optional(object({
+      charm_channel  = string
+      charm_revision = optional(number)
+      charm_base     = optional(string, "ubuntu@24.04")
+      machine_ids    = list(string)
+      charm_config   = map(string)
+      user_keys      = string
+    }))
   }))
   default = {}
+}
+
+variable "offering_controllers" {
+  description = "Controllers hosting offers consumed by storage backends"
+  type = map(object({
+    controller_addresses = string
+    username             = string
+    password             = string
+    ca_certificate       = string
+  }))
+  default   = {}
+  sensitive = true
 }

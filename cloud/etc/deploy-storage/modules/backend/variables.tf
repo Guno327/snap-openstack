@@ -57,3 +57,14 @@ variable "secrets" {
   type        = map(string)
   default     = {}
 }
+
+variable "integrations" {
+  description = "Extra integrations of backend application"
+  type = map(object({
+    application         = optional(string)
+    endpoint            = optional(string)
+    offer_url           = optional(string)
+    offering_controller = optional(string)
+  }))
+  default = {}
+}
